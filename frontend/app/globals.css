@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f8fafc;
+  --text: #0f172a;
+}
+
+@keyframes mesh-shift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 100%;
+  }
+  50% {
+    background-position: 100% 50%, 0% 100%, 80% 0%, 50% 50%;
+  }
+  100% {
+    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 100%;
+  }
+}
+
+@keyframes blob-float-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -24px, 0) scale(1.04);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes blob-float-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-22px, 16px, 0) scale(0.97);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+body {
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.animated-gradient-bg {
+  background-color: #eaf1ff;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(125, 172, 255, 0.45) 0%, rgba(125, 172, 255, 0) 42%),
+    radial-gradient(circle at 88% 20%, rgba(186, 130, 255, 0.38) 0%, rgba(186, 130, 255, 0) 45%),
+    radial-gradient(circle at 70% 85%, rgba(255, 144, 214, 0.34) 0%, rgba(255, 144, 214, 0) 48%),
+    radial-gradient(circle at 22% 80%, rgba(143, 196, 255, 0.3) 0%, rgba(143, 196, 255, 0) 42%)
+  );
+  background-size: 170% 170%, 170% 170%, 180% 180%, 160% 160%;
+  animation: mesh-shift 20s ease-in-out infinite;
+}
+
+.animated-gradient-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.16)
+  );
+  z-index: 0;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  @apply rounded-xl border border-white/30 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.14)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.2)];
+}
+
+.mesh-blob {
+  @apply pointer-events-none absolute rounded-full blur-3xl opacity-30;
+}
+
+.mesh-blob-a {
+  animation: blob-float-a 17s ease-in-out infinite;
+}
+
+.mesh-blob-b {
+  animation: blob-float-b 19s ease-in-out infinite;
+}
+
+@layer base {
+  button {
+    @apply transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply rounded-md border border-slate-300 shadow-sm transition-all duration-200 focus:border-ocean focus:outline-none focus:ring-2 focus:ring-ocean/30;
+  }
+}
+
+.btn-loading {
+  @apply inline-flex items-center gap-2;
+}
+
+.spinner {
+  @apply h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white;
+}
+
+.feedback-success {
+  @apply rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700;
+}
+
+.feedback-error {
+  @apply rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700;
+}
+
+.hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  will-change: transform, opacity;
+  animation: hero-zoom 22s ease-in-out infinite;
+}
+
+@keyframes hero-zoom {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hero-btn {
+  @apply inline-flex items-center rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300;
+}
+
+.hero-btn-primary {
+  @apply bg-white text-slate-900 shadow-[0_12px_28px_rgba(255,255,255,0.25)] hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(255,255,255,0.34)];
+}
+
+.hero-btn-secondary {
+  @apply border border-white/60 bg-white/15 text-white shadow-[0_12px_28px_rgba(15,23,42,0.3)] backdrop-blur-md hover:-translate-y-0.5 hover:bg-white/25 hover:shadow-[0_16px_36px_rgba(15,23,42,0.38)];
+}
+
+.hero-paw {
+  position: absolute;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 9999px;
+  filter: blur(55px);
+  opacity: 0.2;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 199, 239, 0.65), rgba(129, 140, 248, 0.15));
+}
+
+.hero-paw-a {
+  animation: blob-float-a 16s ease-in-out infinite;
+}
+
+.hero-paw-b {
+  animation: blob-float-b 18s ease-in-out infinite;
+}
+
+.hero-paw-c {
+  animation: blob-float-a 20s ease-in-out infinite reverse;
+}
