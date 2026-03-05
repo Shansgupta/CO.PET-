@@ -230,6 +230,7 @@ export default function DashboardPage() {
   };
 
   const hasPendingOrActiveBooking = (petId: string) => {
+    if (!data) return false;
     const now = new Date();
     return data.lender.received_bookings.some((booking) => {
       if (booking.pet_id !== petId) return false;
