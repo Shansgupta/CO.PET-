@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.deps.auth import get_current_user
@@ -101,6 +103,20 @@ async def create_booking(payload: BookingCreate, current_user=Depends(get_curren
     payment_calc = simulate_payment(total_amount)
     payment_doc = {"booking_id": booking_id, **payment_calc}
     await db.payments.insert_one(payment_doc)
+
+    await db.notifications.insert_one(
+        {
+            "user_id": pet["owner_id"],
+            "type": "booking_created",
+            "title": "New booking received",
+            "message": f'{current_user.get("name", "A borrower")} booked {pet.get("name", "your pet")}.',
+            "pet_id": payload.pet_id,
+            "booking_id": booking_id,
+            "borrower_id": str(current_user["_id"]),
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
     if normalized_pet_slots != pet.get("availability_slots", []):
         await db.pets.update_one(

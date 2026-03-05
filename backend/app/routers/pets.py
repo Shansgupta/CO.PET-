@@ -13,6 +13,7 @@ from app.schemas.pet import (
 )
 from app.utils.dates import (
     datetimes_overlap,
+    normalize_booking_to_datetimes,
     normalize_slot_to_datetimes,
     validate_datetime_range,
 )
@@ -225,6 +226,21 @@ async def update_booking_status(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the pet owner can update booking status",
         )
+
+    if payload.bookings_enabled is False:
+        now = datetime.utcnow()
+        async for booking in db.bookings.find(
+            {"pet_id": pet_id, "status": {"$in": ["confirmed", "active"]}}
+        ):
+            booking_start, booking_end = normalize_booking_to_datetimes(booking)
+            if booking_end > now:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "Booking cannot be disabled while a booked lending period "
+                        "is still pending or active"
+                    ),
+                )
 
     await db.pets.update_one(
         {"_id": pet["_id"]},

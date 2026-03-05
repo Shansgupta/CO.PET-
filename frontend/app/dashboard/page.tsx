@@ -56,8 +56,19 @@ type DashboardData = {
   };
 };
 
+type Notification = {
+  id: string;
+  title?: string;
+  message?: string;
+  is_read?: boolean;
+  created_at?: string;
+  booking_id?: string;
+  pet_id?: string;
+};
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [error, setError] = useState("");
   const [loadingAction, setLoadingAction] = useState("");
   const [activeTab, setActiveTab] = useState<"lender" | "borrower">("lender");
@@ -85,8 +96,17 @@ export default function DashboardPage() {
     setData(dashboard);
   };
 
+  const loadNotifications = async () => {
+    const token = getToken();
+    if (!token) return;
+    const items = await apiFetch<Notification[]>("/notifications", { token });
+    setNotifications(items);
+  };
+
   useEffect(() => {
-    loadDashboard().catch((err) => setError((err as Error).message));
+    Promise.all([loadDashboard(), loadNotifications()]).catch((err) =>
+      setError((err as Error).message)
+    );
   }, []);
 
   useEffect(() => {
@@ -209,6 +229,30 @@ export default function DashboardPage() {
     }
   };
 
+  const hasPendingOrActiveBooking = (petId: string) => {
+    const now = new Date();
+    return data.lender.received_bookings.some((booking) => {
+      if (booking.pet_id !== petId) return false;
+      if (!["confirmed", "active"].includes((booking.booking_status || "").toLowerCase())) {
+        return false;
+      }
+      const end = new Date(booking.end_datetime);
+      if (Number.isNaN(end.getTime())) return false;
+      return end > now;
+    });
+  };
+
+  const markNotificationRead = async (id: string) => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      await apiFetch(`/notifications/${id}/read`, { method: "PATCH", token });
+      await loadNotifications();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   if (error) return <p className="feedback-error">{error}</p>;
   if (!data) return <p>Loading dashboard...</p>;
 
@@ -241,6 +285,37 @@ export default function DashboardPage() {
       {activeTab === "lender" && (
         <>
           <div className="card">
+            <h2 className="text-2xl font-bold">Notifications</h2>
+            <div className="mt-3 space-y-2">
+              {notifications.length === 0 && (
+                <p className="text-slate-600">No notifications yet.</p>
+              )}
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`rounded-md border p-3 ${n.is_read ? "border-slate-200 bg-white" : "border-emerald-200 bg-emerald-50"}`}
+                >
+                  <p className="font-semibold">{n.title || "Notification"}</p>
+                  <p className="text-sm text-slate-700">{n.message || "You have a new update."}</p>
+                  {n.created_at && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {new Date(n.created_at).toLocaleString()}
+                    </p>
+                  )}
+                  {!n.is_read && (
+                    <button
+                      onClick={() => markNotificationRead(n.id)}
+                      className="mt-2 rounded-md border border-slate-300 px-3 py-1 text-xs"
+                    >
+                      Mark as read
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card">
             <h2 className="text-2xl font-bold">Manage Listings</h2>
             <div className="mt-3 space-y-2">
               {data.lender.listed_pets.length === 0 && <p className="text-slate-600">No listed pets yet.</p>}
@@ -251,10 +326,18 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-600">
                     Booking: {(pet.bookings_enabled ?? true) ? "Enabled" : "Disabled"}
                   </p>
+                  {(pet.bookings_enabled ?? true) && hasPendingOrActiveBooking(pet.id) && (
+                    <p className="mt-1 text-xs text-amber-700">
+                      Disable booking will be available after current lending period finishes.
+                    </p>
+                  )}
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => toggleBookingStatus(pet)}
-                      disabled={loadingAction.length > 0}
+                      disabled={
+                        loadingAction.length > 0 ||
+                        ((pet.bookings_enabled ?? true) && hasPendingOrActiveBooking(pet.id))
+                      }
                       className="rounded-md border border-slate-300 px-3 py-1 text-sm"
                     >
                       {loadingAction === `toggle-${pet.id}` ? (
@@ -262,6 +345,8 @@ export default function DashboardPage() {
                           <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-slate-700" />
                           Processing...
                         </span>
+                      ) : (pet.bookings_enabled ?? true) && hasPendingOrActiveBooking(pet.id) ? (
+                        "Disable Booking (Locked)"
                       ) : (
                         <>{(pet.bookings_enabled ?? true) ? "Disable Booking" : "Enable Booking"}</>
                       )}
