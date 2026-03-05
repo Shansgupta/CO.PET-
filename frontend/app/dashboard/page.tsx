@@ -99,14 +99,17 @@ export default function DashboardPage() {
   const loadNotifications = async () => {
     const token = getToken();
     if (!token) return;
-    const items = await apiFetch<Notification[]>("/notifications", { token });
-    setNotifications(items);
+    try {
+      const items = await apiFetch<Notification[]>("/notifications", { token });
+      setNotifications(items);
+    } catch {
+      setNotifications([]);
+    }
   };
 
   useEffect(() => {
-    Promise.all([loadDashboard(), loadNotifications()]).catch((err) =>
-      setError((err as Error).message)
-    );
+    loadDashboard().catch((err) => setError((err as Error).message));
+    loadNotifications();
   }, []);
 
   useEffect(() => {
