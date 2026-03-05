@@ -41,6 +41,6 @@ async def mongo_exception_handler(_: Request, __: PyMongoError):
     )
 
 
-@app.get("/health")
+@app.get("/")
 async def health():
     return {"status": "ok"}
